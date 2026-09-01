@@ -87,18 +87,25 @@ public class CharacterControllerMain : MonoBehaviour
         cameraRight.Normalize();
         
          // Calculate desired movement
-        desiredMove = (cameraForward * HorizontalZ + cameraRight * HorizontalX).normalized * speed;
-    
+        Vector3 input = (cameraForward * HorizontalZ + cameraRight * HorizontalX);
+        Vector3 desiredMove = Vector3.zero;
+        
+        // normalize if there's input
+        if (HorizontalX != 0 || HorizontalZ != 0)
+            {
+                desiredMove = input.normalized * speed;
+            }
+
          // Apply friction when no input
-        if (desiredMove.magnitude == 0)
+          if (desiredMove.magnitude == 0)
         {
-            currentVelocity *= friction;  // Gradually slow down
-            Debug.Log("Friction applied: " + currentVelocity.magnitude);
+            // No input: apply friction
+            currentVelocity *= friction;
         }
         else
         {
-            currentVelocity = desiredMove;  // Change direction/speed
-            Debug.Log("New velocity: " + currentVelocity.magnitude);
+            // Has input: smoothly blend toward desired direction
+            currentVelocity = Vector3.Lerp(currentVelocity, desiredMove, 0.15f);
         }
 
         
