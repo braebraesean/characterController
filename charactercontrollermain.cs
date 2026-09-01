@@ -14,6 +14,8 @@ public class CharacterControllerMain : MonoBehaviour
     private Camera camera;
     // speed is a constant that will be used to control the speed of the player character
     public float speed =.1f;
+    // sets the rotation speed of the camera
+    public float mouseSensitivity = 100f;
     // gravity is a constant that will be used to simulate the effect of gravity on the player character
     public float gravity = 9.81f;
     // DEBUG is a variable that will be used to enable or disable debug mode
@@ -27,6 +29,9 @@ public class CharacterControllerMain : MonoBehaviour
         camera = Camera.main;
         // lock camera to the player
         camera.transform.SetParent(transform);
+        // Lock cursor to game window
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;  // Optional: hide the cursor
     }
 
     // Update is called once per frame
@@ -35,7 +40,10 @@ public class CharacterControllerMain : MonoBehaviour
         // get input from the player
         float Horizontal = Input.GetKey(KeyCode.D) ? 1 : Input.GetKey(KeyCode.A) ? -1 : 0;
         float Vertical = Input.GetKey(KeyCode.W) ? 1 : Input.GetKey(KeyCode.S) ? -1 : 0;
+        float mouseX = Input.GetAxis("Mouse X");
+        float mouseY = Input.GetAxis("Mouse Y");
 
+        
         // calculate the vertical speed of the player character based on whether they are grounded or not
         float ySpeed = characterController.isGrounded ? 0 : -gravity;
         
@@ -44,6 +52,12 @@ public class CharacterControllerMain : MonoBehaviour
 
         // multiply movement by speed
         moveDirection *= speed;
+        mouseX *= mouseSensitivity * 50;
+        mouseY *= mouseSensitivity * 50;
+        
+        
+        Debug.Log("Mouse X: " + mouseX);
+        Debug.Log("Mouse Y: " + mouseY);
 
         // create a new vector3 to represent the vertical movement of the player character
         Vector3 VerticalMovement = new Vector3(0, ySpeed, 0);
@@ -51,6 +65,9 @@ public class CharacterControllerMain : MonoBehaviour
         // move the player character in the direction of the movement vector
         characterController.Move(moveDirection + VerticalMovement * Time.deltaTime);
         
+        // rotate the player character on the axis opposite of mouse movement
+        transform.Rotate(-mouseY * Time.deltaTime, mouseX * Time.deltaTime, 0);
+
         // check if the player has pressed the L key to enable debug mode
         DEBUG = Input.GetKeyDown(KeyCode.L) ? 1 : 0;
         if (DEBUG == 1) debug(moveDirection); 
