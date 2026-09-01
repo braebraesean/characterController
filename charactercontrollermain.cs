@@ -49,8 +49,6 @@ public class CharacterControllerMain : MonoBehaviour
         // get input from the player
         float HorizontalX = Input.GetKey(KeyCode.D) ? 1 : Input.GetKey(KeyCode.A) ? -1 : 0;
         float HorizontalZ = Input.GetKey(KeyCode.W) ? 1 : Input.GetKey(KeyCode.S) ? -1 : 0;
-        float mouseX = Input.GetAxis("Mouse X");
-        float mouseY = Input.GetAxis("Mouse Y");
 
         // calculate the vertical speed of the player character based on whether they are grounded or not
         float ySpeed = characterController.isGrounded ? 0 : -gravity;
@@ -79,7 +77,11 @@ public class CharacterControllerMain : MonoBehaviour
         // move the player character in the direction of the movement vector
         characterController.Move(moveDirection + VerticalMovement * Time.deltaTime);
         
-        // checks what the angle of the camera would be vertically if rotated this frame
+        // Gets mouse input from user
+        float mouseX = Input.GetAxis("Mouse X");
+        float mouseY = Input.GetAxis("Mouse Y");
+       
+        // checks what the angle of the camera would be vertically if rotated this frame based on m ouse movement
         float newAngle = verticalAngle - mouseY * Time.deltaTime;
 
         // uses that new angle and previous angle to calcculate how much the camera would rotate
@@ -89,7 +91,7 @@ public class CharacterControllerMain : MonoBehaviour
         float maxDelta = maxVerticalAngle - verticalAngle;  
         float minDelta = -maxVerticalAngle - verticalAngle;
 
-        // clamps down the rotation to not go over +-90
+        // clamps down the rotation to not go over +-MaxVerticleAngle
         deltaRotation = Mathf.Clamp(deltaRotation, minDelta, maxDelta);
 
         
@@ -106,11 +108,12 @@ public class CharacterControllerMain : MonoBehaviour
         DEBUG = Input.GetKeyDown(KeyCode.L) ? 1 : 0;
         if (DEBUG == 1) debug(moveDirection); 
     } 
-    // debug function to print out the current state of the player character
+    // debug function to print out the current state of the player character and the camera
     private void debug(Vector3 moveDirection)
     {
-        Debug.Log("CharacterControllerMain: " + characterController.isGrounded);
-        Debug.Log(moveDirection);
+        Debug.Log("Camera Verticle rotation: " + verticalAngle);
+        Debug.Log("Player is grounded: " + characterController.isGrounded);
+        Debug.Log("Player velocity: " + moveDirection);
     }
 
 }
