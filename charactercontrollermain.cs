@@ -10,15 +10,20 @@ public class CharacterControllerMain : MonoBehaviour
    
     // characterController is a reference to the CharacterController component attached to the player character
     private CharacterController characterController;
-    // camera is a reference to the main camera in the scene
-    private Camera camera;
     // speed is a constant that will be used to control the speed of the player character
     public float speed =.1f;
-    // sets the rotation speed of the camera
-    public float mouseSensitivity = 100f;
     // gravity is a constant that will be used to simulate the effect of gravity on the player character
     public float gravity = 9.81f;
     // DEBUG is a variable that will be used to enable or disable debug mode
+    
+    // camera is a reference to the main camera in the scene
+    private Camera camera;
+    // Tracks current camera angle (0 = straight ahead)
+    private float verticalAngle = 0f;  
+    // Limit: camera can look max 90° up or down
+    public float maxVerticalAngle = 90f;  
+    // sets the rotation speed of the camera
+    public float mouseSensitivity = 100f;
     int DEBUG;
 
     // Start is called before the first frame update
@@ -43,7 +48,6 @@ public class CharacterControllerMain : MonoBehaviour
         float mouseX = Input.GetAxis("Mouse X");
         float mouseY = Input.GetAxis("Mouse Y");
 
-        
         // calculate the vertical speed of the player character based on whether they are grounded or not
         float ySpeed = characterController.isGrounded ? 0 : -gravity;
         
@@ -61,10 +65,22 @@ public class CharacterControllerMain : MonoBehaviour
         // move the player character in the direction of the movement vector
         characterController.Move(moveDirection + VerticalMovement * Time.deltaTime);
         
+        // checks what the angle of the camera would be vertically if rotated this frame
+        float newAngle = verticalAngle - mouseY * Time.deltaTime;
+        // calculates the angle clamped down to a max of +-90 degrees
+        newAngle = Mathf.Clamp(newAngle, -maxVerticalAngle, maxVerticalAngle);
+        // if clamped angle is different from current angle, rotates camera vertically
+        if (newAngle != verticalAngle)  // Only rotate if angle actually changed
+            {
+            float deltaRotation = newAngle - verticalAngle;  // How much to rotate
+            camera.transform.RotateAround(transform.position, transform.right, deltaRotation);
+            verticalAngle = newAngle;  // Save the new angle
+            }
         // rotate the player horozontally around the y axis
         transform.Rotate(0, mouseX * Time.deltaTime, 0);
-        // rotate the camera vertically aroudn the x axis
-        camera.transform.RotateAround(transform.position, transform.right, mouseY * Time.deltaTime);
+
+        // rotate the camera vertically around the x axis
+        //camera.transform.RotateAround(transform.position, transform.right, mouseY * Time.deltaTime);
 
         // check if the player has pressed the L key to enable debug mode
         DEBUG = Input.GetKeyDown(KeyCode.L) ? 1 : 0;
