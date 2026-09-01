@@ -55,7 +55,6 @@ public class CharacterControllerMain : MonoBehaviour
         DEBUG = Input.GetKeyDown(KeyCode.L) ? 1 : 0;
         if (DEBUG == 1) debug(moveDirection); 
     } 
-    
     // debug function to print out the current state of the player character
     private void debug(Vector3 moveDirection)
     {
