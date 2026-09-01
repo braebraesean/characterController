@@ -67,20 +67,26 @@ public class CharacterControllerMain : MonoBehaviour
         
         // checks what the angle of the camera would be vertically if rotated this frame
         float newAngle = verticalAngle - mouseY * Time.deltaTime;
-        // calculates the angle clamped down to a max of +-90 degrees
-        newAngle = Mathf.Clamp(newAngle, -maxVerticalAngle, maxVerticalAngle);
+
+        // uses that new angle and previous angle to calcculate how much the camera would rotate
+        float deltaRotation = newAngle - verticalAngle;
+
+        // calculates how much further the camera could rotate without going over max
+        float maxDelta = maxVerticalAngle - verticalAngle;  
+        float minDelta = -maxVerticalAngle - verticalAngle;
+
+        // clamps down the rotation to not go over +-90
+        deltaRotation = Mathf.Clamp(deltaRotation, minDelta, maxDelta);
+
+        
         // if clamped angle is different from current angle, rotates camera vertically
-        if (newAngle != verticalAngle)  // Only rotate if angle actually changed
-            {
-            float deltaRotation = newAngle - verticalAngle;  // How much to rotate
+        if (deltaRotation != 0)
+        {
             camera.transform.RotateAround(transform.position, transform.right, deltaRotation);
-            verticalAngle = newAngle;  // Save the new angle
-            }
+            verticalAngle += deltaRotation;
+        }
         // rotate the player horozontally around the y axis
         transform.Rotate(0, mouseX * Time.deltaTime, 0);
-
-        // rotate the camera vertically around the x axis
-        //camera.transform.RotateAround(transform.position, transform.right, mouseY * Time.deltaTime);
 
         // check if the player has pressed the L key to enable debug mode
         DEBUG = Input.GetKeyDown(KeyCode.L) ? 1 : 0;
