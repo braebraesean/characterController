@@ -55,18 +55,16 @@ public class CharacterControllerMain : MonoBehaviour
         mouseX *= mouseSensitivity * 50;
         mouseY *= mouseSensitivity * 50;
         
-        
-        Debug.Log("Mouse X: " + mouseX);
-        Debug.Log("Mouse Y: " + mouseY);
-
         // create a new vector3 to represent the vertical movement of the player character
         Vector3 VerticalMovement = new Vector3(0, ySpeed, 0);
         
         // move the player character in the direction of the movement vector
         characterController.Move(moveDirection + VerticalMovement * Time.deltaTime);
         
-        // rotate the player character on the axis opposite of mouse movement
-        transform.Rotate(-mouseY * Time.deltaTime, mouseX * Time.deltaTime, 0);
+        // rotate the player horozontally around the y axis
+        transform.Rotate(0, mouseX * Time.deltaTime, 0);
+        // rotate the camera vertically aroudn the x axis
+        camera.transform.RotateAround(transform.position, transform.right, mouseY * Time.deltaTime);
 
         // check if the player has pressed the L key to enable debug mode
         DEBUG = Input.GetKeyDown(KeyCode.L) ? 1 : 0;
