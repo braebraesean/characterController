@@ -19,9 +19,9 @@ public class CharacterControllerMain : MonoBehaviour
     // camera is a reference to the main camera in the scene
     private Camera camera;
     // Tracks current camera angle (0 = straight ahead)
-    private float verticalAngle = 0f;  
+    private float verticalAngle = 20f;  
     // Limit: camera can look max 90° up or down
-    public float maxVerticalAngle = 90f;  
+    public float maxVerticalAngle = 89f;  
     // sets the rotation speed of the camera
     public float mouseSensitivity = 100f;
     int DEBUG;
@@ -34,6 +34,10 @@ public class CharacterControllerMain : MonoBehaviour
         camera = Camera.main;
         // lock camera to the player
         camera.transform.SetParent(transform);
+        // rotates camera to look at player
+        camera.transform.Rotate(verticalAngle,0,0, Space.Self);
+
+        
         // Lock cursor to game window
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;  // Optional: hide the cursor
@@ -43,16 +47,26 @@ public class CharacterControllerMain : MonoBehaviour
     void Update()
     {
         // get input from the player
-        float Horizontal = Input.GetKey(KeyCode.D) ? 1 : Input.GetKey(KeyCode.A) ? -1 : 0;
-        float Vertical = Input.GetKey(KeyCode.W) ? 1 : Input.GetKey(KeyCode.S) ? -1 : 0;
+        float HorizontalX = Input.GetKey(KeyCode.D) ? 1 : Input.GetKey(KeyCode.A) ? -1 : 0;
+        float HorizontalZ = Input.GetKey(KeyCode.W) ? 1 : Input.GetKey(KeyCode.S) ? -1 : 0;
         float mouseX = Input.GetAxis("Mouse X");
         float mouseY = Input.GetAxis("Mouse Y");
 
         // calculate the vertical speed of the player character based on whether they are grounded or not
         float ySpeed = characterController.isGrounded ? 0 : -gravity;
         
-        // create a new vector3 to represent the movement direction of the player character
-        Vector3 moveDirection = new Vector3(Horizontal, 0, Vertical).normalized;
+        // Get camera's forward and right directions
+        Vector3 cameraForward = camera.transform.forward;
+        Vector3 cameraRight = camera.transform.right;
+
+        // Remove Y component (keep movement horizontal)
+        cameraForward.y = 0;
+        cameraRight.y = 0;
+        cameraForward.Normalize();
+        cameraRight.Normalize();
+        
+        // Calculate movement relative to camera
+        Vector3 moveDirection = (cameraForward * HorizontalZ + cameraRight * HorizontalX).normalized;
 
         // multiply movement by speed
         moveDirection *= speed;
