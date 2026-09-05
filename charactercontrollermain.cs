@@ -3,18 +3,19 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-public class CharacterControllerMain : MonoBehaviour
+public class PlayerMain : MonoBehaviour
 {
     
 
    
-    private CharacterController characterController;
+    private Rigidbody Player;
+    GameObject Model;
 
     // movement variables
     public float speed = 40f;
     public float gravity = 9.81f;
-    public float friction = 0.006f; 
-    public float acceleration = 0.003f;
+    public float friction = 1.8f; 
+    public float acceleration = 0.5f;
 
     // camera variables
     private Camera camera;
@@ -29,29 +30,30 @@ public class CharacterControllerMain : MonoBehaviour
     private bool IsSlowingDown;
 
     void Start(){
-            //define camera and player character controller
-            characterController = GetComponent<CharacterController>();
+            //define camerac player character, and playermodel. and locks them together
+            Player = GetComponent<Rigidbody>();
             camera = Camera.main;
-            // lock camera to the player
             camera.transform.SetParent(transform);
-            // rotates camera to look at player
             camera.transform.Rotate(verticalAngle,0,0, Space.Self);
-
-            
+            Model = GameObject.FindWithTag("Player");
+            Model.transform.SetParent(transform);
             // Lock cursor to game window
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;  // Optional: hide the cursor    
         }
 
-    void Update(){
+    void FixedUpdate(){
         //handles player movement
         PlayerMovement();
+     } 
+
+     void Update(){
         //handles the camera
         CameraMovement();
             // check if the player has pressed the L key to enable debug mode
         DEBUG = Input.GetKeyDown(KeyCode.L) ? 1 : 0;
          if (DEBUG == 1) debug(); 
-     } 
+     }
     
 
     public void CameraMovement(){
@@ -87,7 +89,7 @@ public class CharacterControllerMain : MonoBehaviour
         // get input
         float HorizontalX = Input.GetKey(KeyCode.D) ? 1 : Input.GetKey(KeyCode.A) ? -1 : 0;
         float HorizontalZ = Input.GetKey(KeyCode.W) ? 1 : Input.GetKey(KeyCode.S) ? -1 : 0;
-        float ySpeed = characterController.isGrounded ? 0 : -gravity;
+        float ySpeed = Player.linearVelocity.y - (gravity * Time.deltaTime);
         Vector3 VerticalMovement = new Vector3(0, ySpeed, 0);
         IsInput = HorizontalX != 0 || HorizontalZ != 0;
         Vector3 cameraForward = camera.transform.forward;
@@ -104,17 +106,17 @@ public class CharacterControllerMain : MonoBehaviour
         if (!IsInput)
         {
             IsSlowingDown = true;
-            currentVelocity = Vector3.Lerp(currentVelocity, Vector3.zero, friction);
+            currentVelocity = Vector3.Lerp(currentVelocity, Vector3.zero, friction * Time.deltaTime);
         }
         
         if (IsInput)
         {
             IsSlowingDown = false;
-            currentVelocity = Vector3.Lerp(currentVelocity, desiredMove, acceleration);
+            currentVelocity = Vector3.Lerp(currentVelocity, desiredMove, acceleration * Time.deltaTime);
         }
         
         // move the player character in the direction of the movement vector
-        characterController.Move((currentVelocity + VerticalMovement) * Time.deltaTime);
+        Player.linearVelocity = (currentVelocity + VerticalMovement);
 
     }
    
@@ -123,7 +125,6 @@ public class CharacterControllerMain : MonoBehaviour
         Debug.Log("Camera Verticle rotation: " + verticalAngle);
         Debug.Log("Player is giving input: " + IsInput);
         Debug.Log("Player Friction: " + IsSlowingDown); 
-        Debug.Log("Player is grounded: " + characterController.isGrounded);
         Debug.Log("Player velocity: " + currentVelocity); 
     }
 }
