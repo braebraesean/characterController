@@ -13,6 +13,9 @@ public class PlayerMain : MonoBehaviour
     //model variables
     GameObject Model;
     private Quaternion modelRotation;
+    public float distFromGround = .5f;
+
+
     // movement variables
     public float speed = 40f;
     public float gravity = 9.81f;
@@ -21,13 +24,16 @@ public class PlayerMain : MonoBehaviour
 
     // camera variables
     private Camera camera;
+    private Vector3 cameraOffset;
     private Vector3 cameraDirection;
-    private float verticalAngle = 0f;  
+    private RaycastHit cameraDistanceHit;
+    private float cameraDistance;
+    private float verticalAngle = 20f;  
     private float horizontalAngle = 0f;
-    private float maxVerticalAngle = 90f;  
+    private float maxVerticalAngle = 85f;  
     public float mouseSensitivity = 100f;
-    public float cameraAngleSet = 20f;
-    public float cameraDistance = 10F;
+    public float cameraMaxDistance = 10F;
+    public LayerMask maskPlayer;
 
     // debug variables
     int DEBUG;
@@ -41,8 +47,8 @@ public class PlayerMain : MonoBehaviour
             // camera
             camera = Camera.main;
             camera.transform.SetParent(transform);
-            verticalAngle += cameraAngleSet;
-
+            cameraOffset = new Vector3(8f, -0f, -21f);
+            cameraDirection = cameraOffset.normalized;
             // model
             Model = GameObject.FindWithTag("Player");
 
@@ -69,7 +75,7 @@ public class PlayerMain : MonoBehaviour
 
     private bool IsGrounded()
     {
-        return Physics.Raycast(Model.transform.position, Vector3.down, 0.5f);
+        return Physics.Raycast(Model.transform.position, Vector3.down, distFromGround);
     }
 
     void CameraMovement(){
@@ -87,45 +93,64 @@ public class PlayerMain : MonoBehaviour
         float z = -Mathf.Cos(horizontalAngle * Mathf.Deg2Rad) * Mathf.Cos(verticalAngle * Mathf.Deg2Rad);
 
         cameraDirection = new Vector3(-x, y, z);
-
+        // calculates cameraDistance to not phase through near objects
+        Physics.Raycast(Model.transform.position, cameraDirection, out cameraDistanceHit, cameraMaxDistance, maskPlayer);
+        if(cameraDistanceHit.distance > 0) cameraDistance = Mathf.Min(cameraMaxDistance, cameraDistanceHit.distance);
+        
         // Positions, and rotates camera
         camera.transform.position = Model.transform.position + (cameraDirection * cameraDistance);
         camera.transform.LookAt(Model.transform.position);
+
+        //clamps camera to above player
+        float clampedY = Mathf.Clamp(camera.transform.position.y, transform.position.y - distFromGround, transform.position.y + cameraMaxDistance);
+        camera.transform.position = new Vector3(camera.transform.position.x, clampedY, camera.transform.position.z);
+
     }
+    
 
-    public void PlayerMovement(){
-        // get input
-        float HorizontalX = Input.GetKey(KeyCode.D) ? 1 : Input.GetKey(KeyCode.A) ? -1 : 0;
-        float HorizontalZ = Input.GetKey(KeyCode.W) ? 1 : Input.GetKey(KeyCode.S) ? -1 : 0;
-        float ySpeed = IsGrounded() ? 0 : Player.linearVelocity.y - (gravity * Time.deltaTime);
-        Vector3 VerticalMovement = new Vector3(0, ySpeed, 0);
-        IsInput = HorizontalX != 0 || HorizontalZ != 0;
-        Vector3 cameraForward = camera.transform.forward;
-        Vector3 cameraRight = camera.transform.right;
-        cameraForward.y = 0;
-        cameraRight.y = 0;
-        cameraForward.Normalize();
-        cameraRight.Normalize();
-        Vector3 input = (cameraForward * HorizontalZ + cameraRight * HorizontalX);
-        Vector3 desiredMove = desiredMove = input.normalized * speed;
-        
-
-         // Apply friction when there is no input
-        if (!IsInput)
-        {
-            IsSlowingDown = true;
-            currentVelocity = Vector3.Lerp(currentVelocity, Vector3.zero, friction * Time.deltaTime);
-        }
-        
-        if (IsInput)
-        {
-            IsSlowingDown = false;
-            currentVelocity = Vector3.Lerp(currentVelocity, desiredMove, acceleration * Time.deltaTime);
-        }
-        
-        // move the player character in the direction of the movement vector
-        Player.linearVelocity = (currentVelocity + VerticalMovement);
-
+    void PlayerMovement()
+    {
+    // Get keyboard input (-1, 0, or 1 for each axis)
+    float HorizontalX = Input.GetKey(KeyCode.D) ? 1 : Input.GetKey(KeyCode.A) ? -1 : 0;
+    float HorizontalZ = Input.GetKey(KeyCode.W) ? 1 : Input.GetKey(KeyCode.S) ? -1 : 0;
+    
+    // Handle vertical movement (gravity)
+    // If grounded, no vertical velocity. If falling, apply gravity
+    float ySpeed = IsGrounded() ? 0 : Player.linearVelocity.y - (gravity * Time.deltaTime);
+    Vector3 VerticalMovement = new Vector3(0, ySpeed, 0);
+    
+    // Check if player is pressing movement keys
+    IsInput = HorizontalX != 0 || HorizontalZ != 0;
+    
+    // Get camera directions and remove vertical component (only horizontal movement)
+    Vector3 cameraForward = camera.transform.forward;
+    Vector3 cameraRight = camera.transform.right;
+    cameraForward.y = 0;
+    cameraRight.y = 0;
+    cameraForward.Normalize();
+    cameraRight.Normalize();
+    
+    // Calculate input direction relative to camera direction
+    Vector3 input = (cameraForward * HorizontalZ + cameraRight * HorizontalX);
+    Vector3 desiredMove = input.normalized * speed;
+    
+    // Apply friction when no input (slow down smoothly)
+    if (!IsInput)
+    {
+        IsSlowingDown = true;
+        currentVelocity = Vector3.Lerp(currentVelocity, Vector3.zero, friction * Time.deltaTime);
+    }
+    
+    // Accelerate toward desired direction when input is given
+    if (IsInput)
+    {
+        IsSlowingDown = false;
+        currentVelocity = Vector3.Lerp(currentVelocity, desiredMove, acceleration * Time.deltaTime);
+    }
+    
+    // Apply final velocity (horizontal movement + vertical gravity)
+    Player.linearVelocity = (currentVelocity + VerticalMovement);
+    
     }
     
     private void debug()
