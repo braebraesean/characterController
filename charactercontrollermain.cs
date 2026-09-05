@@ -9,11 +9,11 @@ public class PlayerMain : MonoBehaviour
 
    
     private Rigidbody Player;
-
+    private SphereCollider sphereCollider;
     //model variables
     GameObject Model;
     private Quaternion modelRotation;
-    public float distFromGround = .5f;
+    private float distFromGround;
 
 
     // movement variables
@@ -50,10 +50,14 @@ public class PlayerMain : MonoBehaviour
 
             // model
             Model = GameObject.FindWithTag("Player");
-
+            
             //player
             Player = Model.GetComponent<Rigidbody>();
-            
+
+            // Get radius of collider
+            sphereCollider = Model.GetComponent<SphereCollider>();
+            if (sphereCollider != null) distFromGround = sphereCollider.radius;
+        
             // cursor
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;  // Optional: hide the cursor    
