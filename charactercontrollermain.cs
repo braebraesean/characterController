@@ -9,8 +9,10 @@ public class PlayerMain : MonoBehaviour
 
    
     private Rigidbody Player;
-    GameObject Model;
 
+    //model variables
+    GameObject Model;
+    private Quaternion modelRotation;
     // movement variables
     public float speed = 40f;
     public float gravity = 9.81f;
@@ -19,9 +21,13 @@ public class PlayerMain : MonoBehaviour
 
     // camera variables
     private Camera camera;
-    private float verticalAngle = 20f;  
-    public float maxVerticalAngle = 89f;  
+    private Vector3 cameraDirection;
+    private float verticalAngle = 0f;  
+    private float horizontalAngle = 0f;
+    private float maxVerticalAngle = 90f;  
     public float mouseSensitivity = 100f;
+    public float cameraAngleSet = 20f;
+    public float cameraDistance = 10F;
 
     // debug variables
     int DEBUG;
@@ -30,14 +36,20 @@ public class PlayerMain : MonoBehaviour
     private bool IsSlowingDown;
 
     void Start(){
-            //define camerac player character, and playermodel. and locks them together
-            Player = GetComponent<Rigidbody>();
+            // define camera, player character, playermodel, and the cursor, then locks them together.
+
+            // camera
             camera = Camera.main;
             camera.transform.SetParent(transform);
-            camera.transform.Rotate(verticalAngle,0,0, Space.Self);
+            verticalAngle += cameraAngleSet;
+
+            // model
             Model = GameObject.FindWithTag("Player");
-            Model.transform.SetParent(transform);
-            // Lock cursor to game window
+
+            //player
+            Player = Model.GetComponent<Rigidbody>();
+            
+            // cursor
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;  // Optional: hide the cursor    
         }
@@ -47,49 +59,45 @@ public class PlayerMain : MonoBehaviour
         PlayerMovement();
      } 
 
-     void Update(){
+    void Update(){
         //handles the camera
         CameraMovement();
             // check if the player has pressed the L key to enable debug mode
         DEBUG = Input.GetKeyDown(KeyCode.L) ? 1 : 0;
          if (DEBUG == 1) debug(); 
-     }
-    
-
-    public void CameraMovement(){
-        // Gets mouse input from user
-        float mouseX = Input.GetAxis("Mouse X");
-        float mouseY = Input.GetAxis("Mouse Y");
-
-        // adjust mouse speed for sensitivity setting
-        mouseX *= mouseSensitivity * 50;
-        mouseY *= mouseSensitivity * 50;
-
-        // checks what the angle of the camera would be vertically if rotated this frame based on mouse movement, 
-        // and clamps it to under +-MaxVerticleMovement
-        float newAngle = verticalAngle - mouseY * Time.deltaTime;
-        float deltaRotation = newAngle - verticalAngle;
-        float maxDelta = maxVerticalAngle - verticalAngle;  
-        float minDelta = -maxVerticalAngle - verticalAngle;
-        deltaRotation = Mathf.Clamp(deltaRotation, minDelta, maxDelta);
-
-        
-        // if clamped angle is different from current angle, rotates camera vertically
-        if (deltaRotation != 0)
-        {
-            camera.transform.RotateAround(transform.position, transform.right, deltaRotation);
-            verticalAngle += deltaRotation;
-        }
-        // rotate the player horozontally around the y axis
-        transform.Rotate(0, mouseX * Time.deltaTime, 0);
     }
 
+    private bool IsGrounded()
+    {
+        return Physics.Raycast(Model.transform.position, Vector3.down, 0.5f);
+    }
+
+    void CameraMovement(){
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * 50;
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * 50;
+
+        // Update angles based on mouse input
+        horizontalAngle += mouseX * Time.deltaTime;
+        verticalAngle -= mouseY * Time.deltaTime;
+        verticalAngle = Mathf.Clamp(verticalAngle, -maxVerticalAngle, maxVerticalAngle);
+
+        // Convert angles to direction
+        float x = Mathf.Sin(horizontalAngle * Mathf.Deg2Rad) * Mathf.Cos(verticalAngle * Mathf.Deg2Rad);
+        float y = Mathf.Sin(verticalAngle * Mathf.Deg2Rad);
+        float z = -Mathf.Cos(horizontalAngle * Mathf.Deg2Rad) * Mathf.Cos(verticalAngle * Mathf.Deg2Rad);
+
+        cameraDirection = new Vector3(-x, y, z);
+
+        // Positions, and rotates camera
+        camera.transform.position = Model.transform.position + (cameraDirection * cameraDistance);
+        camera.transform.LookAt(Model.transform.position);
+    }
 
     public void PlayerMovement(){
         // get input
         float HorizontalX = Input.GetKey(KeyCode.D) ? 1 : Input.GetKey(KeyCode.A) ? -1 : 0;
         float HorizontalZ = Input.GetKey(KeyCode.W) ? 1 : Input.GetKey(KeyCode.S) ? -1 : 0;
-        float ySpeed = Player.linearVelocity.y - (gravity * Time.deltaTime);
+        float ySpeed = IsGrounded() ? 0 : Player.linearVelocity.y - (gravity * Time.deltaTime);
         Vector3 VerticalMovement = new Vector3(0, ySpeed, 0);
         IsInput = HorizontalX != 0 || HorizontalZ != 0;
         Vector3 cameraForward = camera.transform.forward;
@@ -119,12 +127,13 @@ public class PlayerMain : MonoBehaviour
         Player.linearVelocity = (currentVelocity + VerticalMovement);
 
     }
-   
+    
     private void debug()
     {
         Debug.Log("Camera Verticle rotation: " + verticalAngle);
         Debug.Log("Player is giving input: " + IsInput);
         Debug.Log("Player Friction: " + IsSlowingDown); 
         Debug.Log("Player velocity: " + currentVelocity); 
+        Debug.Log("player is grounded: " + IsGrounded());
     }
 }
