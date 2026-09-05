@@ -111,7 +111,7 @@ public class PlayerMain : MonoBehaviour
         camera.transform.LookAt(Model.transform.position);
 
         //clamps camera to above player
-        float clampedY = Mathf.Clamp(camera.transform.position.y, transform.position.y - distFromGround, transform.position.y + cameraMaxDistance);
+        float clampedY = Mathf.Clamp(camera.transform.position.y, Model.transform.position.y - (distFromGround / 2), Model.transform.position.y + cameraMaxDistance);
         camera.transform.position = new Vector3(camera.transform.position.x, clampedY, camera.transform.position.z);
 
     }
