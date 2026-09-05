@@ -27,7 +27,7 @@ public class PlayerMain : MonoBehaviour
     private Vector3 cameraOffset;
     private Vector3 cameraDirection;
     private RaycastHit cameraDistanceHit;
-    private float cameraDistance;
+    private float cameraDistance = 10F;
     private float verticalAngle = 20f;  
     private float horizontalAngle = 0f;
     private float maxVerticalAngle = 85f;  
@@ -47,8 +47,7 @@ public class PlayerMain : MonoBehaviour
             // camera
             camera = Camera.main;
             camera.transform.SetParent(transform);
-            cameraOffset = new Vector3(8f, -0f, -21f);
-            cameraDirection = cameraOffset.normalized;
+
             // model
             Model = GameObject.FindWithTag("Player");
 
@@ -58,6 +57,12 @@ public class PlayerMain : MonoBehaviour
             // cursor
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;  // Optional: hide the cursor    
+
+            // Positions, and rotates camera
+            cameraOffset = new Vector3(8f, -0f, -21f);
+            cameraDirection = cameraOffset.normalized;
+            camera.transform.position = Model.transform.position + (cameraDirection * cameraDistance);
+            camera.transform.LookAt(Model.transform.position);
         }
 
     void FixedUpdate(){
